@@ -1,3 +1,5 @@
+import json
+
 def json_response(code, message, body=None):
     json_body = json.dumps(body) if body is not None else json.dumps({
         "message": message
