@@ -1,5 +1,6 @@
-import boto3
+import random
 
+import boto3
 
 class InputError(Exception):
     def __init__(self, message):
