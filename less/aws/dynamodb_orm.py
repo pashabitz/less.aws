@@ -6,6 +6,13 @@ class InputError(Exception):
         self.message = message
 
 
+CHARS_FOR_KEY = "ACDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrsuvwxyz2345679"
+
+
+def generate_id():
+    return "".join(random.choices(CHARS_FOR_KEY, k=10))
+
+
 class Table(object):
     def __init__(self, table_configuration):
         self.table_configuration = table_configuration
@@ -123,6 +130,9 @@ class Table(object):
             raise InputError("Missing values")
         if before_put:
             before_put(values)
+
+        for a in self.table_configuration.auto_generated_attributes:
+            values[a] = generate_id()
 
         if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in values]:
             raise InputError("Missing required fields")
