@@ -102,13 +102,15 @@ class Table(object):
         expression_names = {
             f"#{k}": k for k in key_items_to_use
         }
-        response = self.client.query(
-            TableName=self.table_configuration.table_name,
-            KeyConditionExpression=key_condition,
-            ExpressionAttributeValues=expression_values,
-            ExpressionAttributeNames=expression_names,
-            IndexName=index,
-        )
+        kwargs = {
+            "TableName": self.table_configuration.table_name,
+            "KeyConditionExpression": key_condition,
+            "ExpressionAttributeValues": expression_values,
+            "ExpressionAttributeNames": expression_names,
+        }
+        if index is not None:
+            kwargs["IndexName"] = index
+        response = self.client.query(**kwargs)
         return [self.translate_from_dynamodb_item(i) for i in response.get("Items", [])]
 
     def scan(self):
