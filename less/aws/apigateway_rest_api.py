@@ -1,4 +1,11 @@
 import json
+from jose import jwt
+import requests
+
+
+class TokenVerificationException(Exception):
+    def __init__(self, message):
+        self.message = message
 
 
 def json_response(code, message, body=None):
@@ -40,7 +47,7 @@ class AccessTokenAuthorizer(object):
     def verify_access_token(self, headers):
         token = AccessTokenAuthorizer._get_access_token(headers)
         if token is None:
-            raise InvalidRequestException("Missing access token")
+            raise TokenVerificationException("Missing access token")
         jwks = requests.get(self.jwks_url).json()
         unverified_header = jwt.get_unverified_header(token)
         access_token_key_id = unverified_header["kid"]
@@ -55,7 +62,7 @@ class AccessTokenAuthorizer(object):
                     "e": key["e"]
                 }
         if not rsa_key:
-            raise InvalidRequestException(f"Key with id {access_token_key_id} not found")
+            raise TokenVerificationException(f"Key with id {access_token_key_id} not found")
         try:
             payload = jwt.decode(
                 token,
@@ -66,8 +73,8 @@ class AccessTokenAuthorizer(object):
             )
             return payload
         except jwt.ExpiredSignatureError:
-            raise InvalidRequestException("Access token expired")
+            raise TokenVerificationException("Access token expired")
         except jwt.JWTClaimsError:
-            raise InvalidRequestException("Invalid claims in access token; check the audience and issuer")
+            raise TokenVerificationException("Invalid claims in access token; check the audience and issuer")
         except Exception:
-            raise InvalidRequestException("Unable to validate access token")
+            raise TokenVerificationException("Unable to validate access token")
