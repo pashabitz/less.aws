@@ -88,7 +88,7 @@ class Table(object):
             Key=self._key_from_params(key)
         )
 
-    def query(self, key):
+    def query(self, key, index=None):
         key_items_to_use = [
             k for k in key if k in self.table_configuration.primary_key or
             k in self.table_configuration.index_attributes
@@ -107,6 +107,7 @@ class Table(object):
             KeyConditionExpression=key_condition,
             ExpressionAttributeValues=expression_values,
             ExpressionAttributeNames=expression_names,
+            IndexName=index,
         )
         return [self.translate_from_dynamodb_item(i) for i in response.get("Items", [])]
 
