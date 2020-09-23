@@ -2,6 +2,7 @@ import random
 
 import boto3
 
+
 class InputError(Exception):
     def __init__(self, message):
         self.message = message
@@ -146,3 +147,19 @@ class Table(object):
             Item=item
         )
         return values
+
+    def update_item(self, key, values):
+        self._validate_primary_key(key)
+        values_to_use = {k: values[k] for k in values if k in self.attributes_by_name}
+        type_by_key = {k: Table.dynamodb_type(self.attributes_by_name[k].get("type", "string")) for k in values_to_use}
+        expression_values = {
+            f":{k}": {
+                f"{type_by_key[k]}": values_to_use[k]
+            } for k in values_to_use
+        }
+        self.client.update_item(
+            TableName=self.table_configuration.table_name,
+            Key=self._key_from_params(key),
+            UpdateExpression="SET " + ", ".join([f"{k} = :{k}" for k in values]),
+            ExpressionAttributeValues=expression_values,
+        )
