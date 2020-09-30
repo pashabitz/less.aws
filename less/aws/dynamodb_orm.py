@@ -2,10 +2,7 @@ import random
 
 import boto3
 
-
-class InputError(Exception):
-    def __init__(self, message):
-        self.message = message
+from table_base import InputError, TableBase
 
 
 CHARS_FOR_KEY = "ACDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrsuvwxyz2345679"
@@ -15,20 +12,13 @@ def generate_id():
     return "".join(random.choices(CHARS_FOR_KEY, k=10))
 
 
-class Table(object):
+class Table(TableBase):
     def __init__(self, table_configuration):
         self.table_configuration = table_configuration
         self.attributes_by_name = {
             k["name"]: k for k in self.table_configuration.attributes
         }
         self.client = boto3.client('dynamodb')
-
-    def _validate_primary_key(self, key):
-        if not key:
-            raise InputError("Missing key")
-        for k in self.table_configuration.primary_key:
-            if k not in key:
-                raise InputError(f"Missing '{k}'")
 
     def translate_from_dynamodb_item(self, item, attributes_by_name=None):
         translated = {}

@@ -6,7 +6,7 @@ setup(
     author='less',
     author_email='pavelbitz@gmail.com',
     packages=['less.aws'],
-    install_requires=['boto3', 'python-jose', 'requests'],
+    install_requires=['boto3', 'python-jose', 'requests', 'psycopg2-binary'],
     version='0.1.0',
     license='GPL3',
     description='AWS related packages for less',

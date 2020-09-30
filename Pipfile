@@ -5,9 +5,11 @@ verify_ssl = true
 
 [dev-packages]
 setuptools = "*"
+"less.data-dictionary" = {editable = true, git = "ssh://git@github.com/pashabitz/less.data_dictionary"}
 
 [packages]
 boto3 = "*"
+psycopg2-binary = "*"
 
 [requires]
 python_version = "3.8"
