@@ -2,7 +2,7 @@ import random
 
 import boto3
 
-from table_base import InputError, TableBase
+from less.aws.table_base import InputError, TableBase
 
 
 CHARS_FOR_KEY = "ACDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrsuvwxyz2345679"
