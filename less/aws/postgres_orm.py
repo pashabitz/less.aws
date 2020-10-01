@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from table_base import InputError, generate_id, TableBase
+from less.aws.table_base import InputError, generate_id, TableBase
 
 
 class PostgresTable(TableBase):
