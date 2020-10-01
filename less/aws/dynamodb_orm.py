@@ -21,10 +21,7 @@ class Table(TableBase):
                 if attribute_type != "list":
                     v = item[k][Table.dynamodb_type(attribute_type)]
                     if attribute_type == "int":
-                        if type(v) == int:
-                            v = int(v)
-                        elif type(v) == float:
-                            v = float(v)
+                        v = float(v)
                     translated[k] = v
                 else:
                     child_attributes = {
