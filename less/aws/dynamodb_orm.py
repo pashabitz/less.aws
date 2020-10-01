@@ -39,7 +39,7 @@ class Table(TableBase):
                 attribute_type = attributes_by_name[k].get("type", "string")
                 if attribute_type != "list":
                     translated[k] = {
-                        Table.dynamodb_type(attribute_type): item[k]
+                        Table.dynamodb_type(attribute_type): str(item[k])
                     }
                 else:
                     child_attributes = {
