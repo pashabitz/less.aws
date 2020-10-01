@@ -19,7 +19,13 @@ class Table(TableBase):
             if k in attributes_by_name:
                 attribute_type = attributes_by_name[k].get("type", "string")
                 if attribute_type != "list":
-                    translated[k] = item[k][Table.dynamodb_type(attribute_type)]
+                    v = item[k][Table.dynamodb_type(attribute_type)]
+                    if attribute_type == "int":
+                        if type(v) == int:
+                            v = int(v)
+                        elif type(v) == float:
+                            v = float(v)
+                    translated[k] = v
                 else:
                     child_attributes = {
                         child["name"]: child for child in attributes_by_name[k]["attributes"]
