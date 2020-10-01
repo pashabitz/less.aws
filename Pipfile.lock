@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "535c39a151590631c7e7ec13330d7345227e5d191d2e61b50a9aa54038922805"
+            "sha256": "59d208a1f295f3b489295c8bee26690a5a79447542277d09623906f9411d059e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -111,12 +111,10 @@
     },
     "develop": {
         "less-data-dictionary": {
-            "editable": true,
             "git": "ssh://git@github.com/pashabitz/less.data_dictionary",
-            "ref": "23c440359c34004363eb55e75d55223fc5502977"
+            "ref": "569f2121bae34080a528931ffd3a0bf5aa79d24a"
         },
         "less.data-dictionary": {
-            "editable": true,
             "git": "ssh://git@github.com/pashabitz/less.data_dictionary"
         }
     }

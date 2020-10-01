@@ -1,15 +1,6 @@
-import random
-
 import boto3
 
-from less.aws.table_base import InputError, TableBase
-
-
-CHARS_FOR_KEY = "ACDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrsuvwxyz2345679"
-
-
-def generate_id():
-    return "".join(random.choices(CHARS_FOR_KEY, k=10))
+from less.aws.table_base import InputError, generate_id, TableBase
 
 
 class Table(TableBase):

@@ -5,7 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 setuptools = "*"
-"less.data-dictionary" = {editable = true, git = "ssh://git@github.com/pashabitz/less.data_dictionary"}
+"less.data-dictionary" = {git = "ssh://git@github.com/pashabitz/less.data_dictionary"}
 
 [packages]
 boto3 = "*"

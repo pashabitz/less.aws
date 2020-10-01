@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from less.aws.table_base import InputError, TableBase
+from table_base import InputError, generate_id, TableBase
 
 
 class PostgresTable(TableBase):
@@ -49,6 +49,28 @@ class PostgresTable(TableBase):
             record = cur.fetchone()
             return dict(record) if record is not None else None
         return self._with_cursor(get)
+
+    def put_item(self, values, before_put=None):
+        if not values:
+            raise InputError("Missing values")
+        if before_put:
+            before_put(values)
+
+        for a in self.table_configuration.auto_generated_attributes:
+            values[a] = generate_id()
+
+        if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in values]:
+            raise InputError("Missing required fields")
+        columns_to_insert = [k for k in values if k in self.attributes_by_name]
+        columns_list = ", ".join(columns_to_insert)
+        params_string = ", ".join(["%s" for c in columns_to_insert])
+        sql = f"INSERT INTO {self._table_name} ({columns_list}) VALUES ({params_string})"
+        params = [values[k] for k in values if k in self.attributes_by_name]
+
+        def insert(cur):
+            cur.execute(sql, params)
+        self._with_cursor(insert)
+        return values
 
     def delete_item(self, key):
         self._validate_primary_key(key)

@@ -1,3 +1,12 @@
+import random
+
+CHARS_FOR_KEY = "ACDEFGHIJKLMNPQRSTUVWXYZabcdefghijkmnpqrsuvwxyz2345679"
+
+
+def generate_id():
+    return "".join(random.choices(CHARS_FOR_KEY, k=10))
+
+
 class InputError(Exception):
     def __init__(self, message):
         self.message = message
