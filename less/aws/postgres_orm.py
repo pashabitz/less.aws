@@ -35,6 +35,15 @@ class PostgresTable(TableBase):
     def _table_name(self):
         return f"user_schema.{self.table_configuration.table_name}"
 
+    def _convert_attribute(self, name, val):
+        if name not in self.attributes_by_name:
+            raise InputError(f"Invalid attribute {name}")
+        type = self.attributes_by_name[name]["type"]
+        if type == "int":
+            return int(val)
+        else:
+            return val
+
     def _with_cursor(self, func):
         with self.connect() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -102,3 +111,22 @@ class PostgresTable(TableBase):
             cur.execute(sql)
             return [dict(r) for r in cur.fetchall()]
         return self._with_cursor(get)
+
+    @staticmethod
+    def attribute_to_postgres_sql(a):
+        postgres_type = {
+            "text": "text",
+            "int": "bigint",
+            "bool": "boolean",
+        }.get(a.get("type", "text"))
+        name = a["name"]
+        nullable = " NOT NULL" if a.get("required", False) else ""
+        return f"{name} {postgres_type}{nullable}"
+
+    @property
+    def get_create_table_sql(self):
+        pk_sql = ", ".join(self.table_configuration.primary_key)
+        pk_sql = f", PRIMARY KEY ({pk_sql})" if self.table_configuration.primary_key else ""
+        columns_sql = ", \n".join([PostgresTable.attribute_to_postgres_sql(a)
+                                   for a in self.table_configuration.attributes])
+        return f"CREATE TABLE {self._table_name} ({columns_sql}{pk_sql});"
