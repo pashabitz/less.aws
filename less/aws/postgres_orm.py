@@ -124,7 +124,7 @@ class PostgresTable(TableBase):
         return f"{name} {postgres_type}{nullable}"
 
     @property
-    def get_create_table_sql(self):
+    def create_table_sql(self):
         pk_sql = ", ".join(self.table_configuration.primary_key)
         pk_sql = f", PRIMARY KEY ({pk_sql})" if self.table_configuration.primary_key else ""
         columns_sql = ", \n".join([PostgresTable.attribute_to_postgres_sql(a)
