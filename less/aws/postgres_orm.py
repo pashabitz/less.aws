@@ -130,3 +130,7 @@ class PostgresTable(TableBase):
         columns_sql = ", \n".join([PostgresTable.attribute_to_postgres_sql(a)
                                    for a in self.table_configuration.attributes])
         return f"CREATE TABLE {self._table_name} ({columns_sql}{pk_sql});"
+
+    @property
+    def drop_table_sql(self):
+        return f"DROP TABLE IF EXISTS {self._table_name};"
