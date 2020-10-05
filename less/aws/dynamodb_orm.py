@@ -52,7 +52,6 @@ class Table(TableBase):
                                 "M": self.translate_to_dynamodb_item(
                                     child,
                                     child_attributes,
-                                    attributes_by_name,
                                     key_prefix,
                                 )
                             } for child in item[k]
