@@ -36,7 +36,7 @@ class Table(TableBase):
             attributes_by_name = self.attributes_by_name
         for k in item:
             if k in attributes_by_name:
-                key_to_use = f"{key_prefix}k"
+                key_to_use = f"{key_prefix}{k}"
                 attribute_type = attributes_by_name[k].get("type", "string")
                 if attribute_type != "list":
                     translated[key_to_use] = {
