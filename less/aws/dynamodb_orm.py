@@ -30,25 +30,31 @@ class Table(TableBase):
                     translated[k] = [self.translate_from_dynamodb_item(child["M"], child_attributes) for child in item[k]["L"]]
         return translated
 
-    def translate_to_dynamodb_item(self, item, attributes_by_name=None):
+    def translate_to_dynamodb_item(self, item, attributes_by_name=None, key_prefix=""):
         translated = {}
         if attributes_by_name is None:
             attributes_by_name = self.attributes_by_name
         for k in item:
             if k in attributes_by_name:
+                key_to_use = f"{key_prefix}k"
                 attribute_type = attributes_by_name[k].get("type", "string")
                 if attribute_type != "list":
-                    translated[k] = {
+                    translated[key_to_use] = {
                         Table.dynamodb_type(attribute_type): str(item[k]) if attribute_type == "int" else item[k]
                     }
                 else:
                     child_attributes = {
                         child["name"]: child for child in attributes_by_name[k]["attributes"]
                     }
-                    translated[k] = {
+                    translated[key_to_use] = {
                         "L": [
                             {
-                                "M": self.translate_to_dynamodb_item(child, child_attributes)
+                                "M": self.translate_to_dynamodb_item(
+                                    child,
+                                    child_attributes,
+                                    attributes_by_name,
+                                    key_prefix,
+                                )
                             } for child in item[k]
                         ]
                     }
@@ -134,13 +140,7 @@ class Table(TableBase):
 
     def update_item(self, key, values):
         self._validate_primary_key(key)
-        values_to_use = {k: values[k] for k in values if k in self.attributes_by_name}
-        type_by_key = {k: Table.dynamodb_type(self.attributes_by_name[k].get("type", "string")) for k in values_to_use}
-        expression_values = {
-            f":{k}": {
-                f"{type_by_key[k]}": values_to_use[k]
-            } for k in values_to_use
-        }
+        expression_values = self.translate_to_dynamodb_item(values, None, ":")
         self.client.update_item(
             TableName=self.table_configuration.table_name,
             Key=self._key_from_params(key),
