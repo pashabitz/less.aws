@@ -115,13 +115,34 @@ class PostgresTable(TableBase):
     @staticmethod
     def attribute_to_postgres_sql(a):
         postgres_type = {
-            "text": "text",
+            "string": "text",
             "int": "bigint",
             "bool": "boolean",
-        }.get(a.get("type", "text"))
+        }.get(a.get("type", "string"))
         name = a["name"]
         nullable = " NOT NULL" if a.get("required", False) else ""
         return f"{name} {postgres_type}{nullable}"
+
+    @staticmethod
+    def postgres_type_to_attribute_type(t):
+        return {
+            "int": "int",
+            "smallint": "int",
+            "bigint": "int",
+            "int2": "int",
+            "int4": "int",
+            "int8": "int",
+            "real": "int",
+            "float4": "int",
+            "float8": "int",
+            "double precision": "int",
+            "boolean": "bool",
+            "bool": "bool",
+            "char": "string",
+            "character": "string",
+            "character varying": "string",
+            "text": "string",
+        }.get(t, "text")
 
     @property
     def create_table_sql(self):
