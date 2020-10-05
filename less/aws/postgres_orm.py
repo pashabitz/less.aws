@@ -118,7 +118,7 @@ class PostgresTable(TableBase):
             "string": "text",
             "int": "bigint",
             "bool": "boolean",
-        }.get(a.get("type", "string"))
+        }.get(a.get("type", "text"))
         name = a["name"]
         nullable = " NOT NULL" if a.get("required", False) else ""
         return f"{name} {postgres_type}{nullable}"
@@ -127,6 +127,7 @@ class PostgresTable(TableBase):
     def postgres_type_to_attribute_type(t):
         return {
             "int": "int",
+            "integer": "int",
             "smallint": "int",
             "bigint": "int",
             "int2": "int",
@@ -142,7 +143,7 @@ class PostgresTable(TableBase):
             "character": "string",
             "character varying": "string",
             "text": "string",
-        }.get(t, "text")
+        }.get(t, "string")
 
     @property
     def create_table_sql(self):
