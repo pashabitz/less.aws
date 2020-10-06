@@ -52,7 +52,6 @@ class Table(TableBase):
                                 "M": self.translate_to_dynamodb_item(
                                     child,
                                     child_attributes,
-                                    key_prefix,
                                 )
                             } for child in item[k]
                         ]
@@ -140,9 +139,10 @@ class Table(TableBase):
     def update_item(self, key, values):
         self._validate_primary_key(key)
         expression_values = self.translate_to_dynamodb_item(values, None, ":")
+        update_expression = "SET " + ", ".join([f"{k} = :{k}" for k in values])
         self.client.update_item(
             TableName=self.table_configuration.table_name,
             Key=self._key_from_params(key),
-            UpdateExpression="SET " + ", ".join([f"{k} = :{k}" for k in values]),
+            UpdateExpression=update_expression,
             ExpressionAttributeValues=expression_values,
         )
