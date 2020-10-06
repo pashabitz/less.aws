@@ -33,7 +33,8 @@ class PostgresTable(TableBase):
 
     @property
     def _table_name(self):
-        return f"user_schema.{self.table_configuration.table_name}"
+        schema = self.table_configuration.table_schema if self.table_configuration.table_schema else "user_schema"
+        return f"{schema}.{self.table_configuration.table_name}"
 
     def _convert_attribute(self, name, val):
         if name not in self.attributes_by_name:
