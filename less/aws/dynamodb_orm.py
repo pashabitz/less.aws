@@ -139,10 +139,12 @@ class Table(TableBase):
     def update_item(self, key, values):
         self._validate_primary_key(key)
         expression_values = self.translate_to_dynamodb_item(values, None, ":")
-        update_expression = "SET " + ", ".join([f"{k} = :{k}" for k in values])
+        expression_attribute_names = {f"#{k}": k for k in values if k in self.attributes_by_name}
+        update_expression = "SET " + ", ".join([f"#{k} = :{k}" for k in values if k in self.attributes_by_name])
         self.client.update_item(
             TableName=self.table_configuration.table_name,
             Key=self._key_from_params(key),
             UpdateExpression=update_expression,
             ExpressionAttributeValues=expression_values,
+            ExpressionAttributeNames=expression_attribute_names,
         )
