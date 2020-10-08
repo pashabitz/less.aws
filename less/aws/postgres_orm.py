@@ -90,6 +90,19 @@ class PostgresTable(TableBase):
             cur.execute(sql, self._pk_values(key))
         return self._with_cursor(delete)
 
+    def update_item(self, key, values):
+        self._validate_primary_key(key)
+        value_keys_to_use = [k for k in values if k in self.attributes_by_name]
+        if not value_keys_to_use:
+            raise InputError("No valid update values provided")
+        set_clause = ", ".join([f"{k} = %s" for k in value_keys_to_use])
+        update_values = [values[k] for k in value_keys_to_use]
+        sql = f"UPDATE {self._table_name} SET {set_clause} WHERE {self._pk_list}"
+
+        def update(cur):
+            cur.execute(sql, update_values + self._pk_values(key))
+        return self._with_cursor(update)
+
     def query(self, key, index=None):
         where = " AND ".join([f"{k} = %s" for k in key if k in self.attributes_by_name])
         params = [key[k] for k in key if k in self.attributes_by_name]
