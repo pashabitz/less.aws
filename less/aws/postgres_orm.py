@@ -101,7 +101,8 @@ class PostgresTable(TableBase):
 
         def update(cur):
             cur.execute(sql, update_values + self._pk_values(key))
-        return self._with_cursor(update)
+        self._with_cursor(update)
+        return values
 
     def query(self, key, index=None):
         where = " AND ".join([f"{k} = %s" for k in key if k in self.attributes_by_name])

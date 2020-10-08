@@ -148,3 +148,4 @@ class Table(TableBase):
             ExpressionAttributeValues=expression_values,
             ExpressionAttributeNames=expression_attribute_names,
         )
+        return values
