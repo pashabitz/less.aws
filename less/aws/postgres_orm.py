@@ -133,7 +133,7 @@ class PostgresTable(TableBase):
             "string": "text",
             "int": "bigint",
             "bool": "boolean",
-        }.get(a.get("type", "text"))
+        }.get(a.get("type", "string"), "text")
         name = a["name"]
         nullable = " NOT NULL" if a.get("required", False) else ""
         return f"{name} {postgres_type}{nullable}"
