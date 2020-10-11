@@ -128,7 +128,7 @@ class PostgresTable(TableBase):
         return self._with_cursor(get)
 
     @staticmethod
-    def attribute_to_postgres_sql(a):
+    def attribute_to_postgres_sql(a, type_change=False):
         postgres_type = {
             "string": "text",
             "int": "bigint",
@@ -136,7 +136,8 @@ class PostgresTable(TableBase):
         }.get(a.get("type", "string"), "text")
         name = a["name"]
         nullable = " NOT NULL" if a.get("required", False) else ""
-        return f"{name} {postgres_type}{nullable}"
+        type_change_sql = "TYPE " if type_change else ""
+        return f"{name} {type_change_sql}{postgres_type}{nullable}"
 
     @staticmethod
     def postgres_type_to_attribute_type(t):
@@ -171,3 +172,25 @@ class PostgresTable(TableBase):
     @property
     def drop_table_sql(self):
         return f"DROP TABLE IF EXISTS {self._table_name};"
+
+    def modify_table(self, changes):
+        remove_columns = [f"DROP COLUMN {a['name']}" for a in changes.removed_attributes]
+        add_columns = [f"ADD COLUMN {PostgresTable.attribute_to_postgres_sql(a)}" for a in changes.added_attributes]
+        columns_changed_name = [a for a in changes.changed_attributes
+                                if "original_name" in a and a["original_name"] != a["name"]]
+        column_name_changes = [f"RENAME {a['original_name']} TO {a['name']}" for a in columns_changed_name]
+        column_changes = ", ".join(remove_columns + add_columns + column_name_changes)
+        sql = f"ALTER TABLE {self._table_name} {column_changes};"
+
+        columns_changed_type = [a for a in changes.changed_attributes if
+                                "original_type" in a and a["original_type"] != a["type"]]
+        column_changes_second_pass = \
+            ", ".join([f"ALTER COLUMN {self.attribute_to_postgres_sql(a, True)}" for a in columns_changed_type])
+        second_pass_sql = f"ALTER TABLE {self._table_name} {column_changes_second_pass};"
+
+        def modify_table(cur):
+            if column_changes:
+                cur.execute(sql)
+            if columns_changed_type:
+                cur.execute(second_pass_sql)
+        self._with_cursor(modify_table)
