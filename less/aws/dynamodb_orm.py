@@ -149,3 +149,9 @@ class Table(TableBase):
             ExpressionAttributeNames=expression_attribute_names,
         )
         return values
+
+    def modify_table(self, changes):
+        if changes.removed_attributes:
+            raise InputError("Removing attributes is not supported for DynamoDB tables")
+        if changes.changed_attributes:
+            raise InputError("Modifying attributes is not supported for DynamoDB tables")
