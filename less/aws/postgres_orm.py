@@ -178,8 +178,7 @@ class PostgresTable(TableBase):
         add_columns = [f"ADD COLUMN {PostgresTable.attribute_to_postgres_sql(a)}" for a in changes.added_attributes]
         columns_changed_type = [a for a in changes.changed_attributes if
                                 "original_type" in a and a["original_type"] != a["type"]]
-        column_type_changes = \
-            ", ".join([f"ALTER COLUMN {self.attribute_to_postgres_sql(a, True)}" for a in columns_changed_type])
+        column_type_changes = [f"ALTER COLUMN {self.attribute_to_postgres_sql(a, True)}" for a in columns_changed_type]
         column_changes = ", ".join(remove_columns + add_columns + column_type_changes)
         sql = f"ALTER TABLE {self._table_name} {column_changes};"
 
