@@ -154,4 +154,4 @@ class Table(TableBase):
         if changes.removed_attributes:
             raise InputError("Removing attributes is not supported for DynamoDB tables")
         if changes.changed_attributes:
-            raise InputError("Modifying attributes is not supported for DynamoDB tables")
+            raise InputError("Modifying an attribute is not supported for DynamoDB tables")
