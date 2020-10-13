@@ -131,7 +131,7 @@ class PostgresTable(TableBase):
     def attribute_to_postgres_sql(a, type_change=False):
         postgres_type = {
             "string": "text",
-            "int": "bigint",
+            "int": "numeric",
             "bool": "boolean",
         }.get(a.get("type", "string"), "text")
         name = a["name"]
@@ -153,6 +153,7 @@ class PostgresTable(TableBase):
             "float4": "int",
             "float8": "int",
             "double precision": "int",
+            "numeric": "int",
             "boolean": "bool",
             "bool": "bool",
             "char": "string",
@@ -190,3 +191,8 @@ class PostgresTable(TableBase):
             if column_changes:
                 cur.execute(sql)
         self._with_cursor(modify_table)
+
+    def rename_table(self, new_name):
+        def alter(cur):
+            cur.execute(f"ALTER TABLE {self._table_name} RENAME TO {new_name};")
+        self._with_cursor(alter)
