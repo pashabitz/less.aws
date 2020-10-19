@@ -12,7 +12,7 @@ class TokenVerificationException(Exception):
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
-            return (str(o) for o in [o])
+            return str(o)
         return super(DecimalEncoder, self).default(o)
 
 
