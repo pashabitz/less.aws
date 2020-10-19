@@ -1,3 +1,4 @@
+import decimal
 import json
 from jose import jwt
 import requests
@@ -8,8 +9,15 @@ class TokenVerificationException(Exception):
         self.message = message
 
 
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return (str(o) for o in [o])
+        return super(DecimalEncoder, self).default(o)
+
+
 def json_response(code, message, body=None):
-    json_body = json.dumps(body) if body is not None else json.dumps({
+    json_body = json.dumps(body, cls=DecimalEncoder) if body is not None else json.dumps({
         "message": message
     })
     return {
