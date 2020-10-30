@@ -168,7 +168,14 @@ class PostgresTable(TableBase):
         pk_sql = f", PRIMARY KEY ({pk_sql})" if self.table_configuration.primary_key else ""
         columns_sql = ", \n".join([PostgresTable.attribute_to_postgres_sql(a)
                                    for a in self.table_configuration.attributes])
-        return f"CREATE TABLE {self._table_name} ({columns_sql}{pk_sql});"
+        statements = [f"CREATE TABLE {self._table_name} ({columns_sql}{pk_sql});"]
+        if self.table_configuration.indexes:
+            for ind, columns in self.table_configuration.indexes.items():
+                if not columns:
+                    raise InputError(f"No columns for index {ind}")
+                index_columns = ", ".join(columns)
+                statements.append(f"CREATE INDEX {ind} ON {self._table_name} ({index_columns});")
+        return statements
 
     @property
     def drop_table_sql(self):
