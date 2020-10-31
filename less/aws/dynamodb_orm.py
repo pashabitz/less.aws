@@ -81,15 +81,11 @@ class Table(TableBase):
         if not self.table_configuration.is_primary_key(key) and \
            index and self.table_configuration.get_index_name(key) != index:
             raise InputError("Passed in key is not primary key and does not match requested index")
-        # key_items_to_use = [
-        #     k for k in key if k in self.table_configuration.primary_key or
-        #     k in self.table_configuration.index_attributes
-        # ]
         key_items_to_use = key
         key_condition = " AND ".join([f"#{k} = :{k}" for k in key_items_to_use])
         expression_values = {
             f":{k}": {
-                "S": key[k]
+                Table.dynamodb_type(self.attributes_by_name[k].get("type", "string")): key[k]
             } for k in key_items_to_use
         }
         expression_names = {
