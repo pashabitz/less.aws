@@ -208,7 +208,7 @@ class PostgresTable(TableBase):
     def is_sql_query_supported():
         return True
 
-    def sql_query(self, ql, params):
+    def sql_query(self, sql, params):
         def execute_query(cur):
             cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
