@@ -21,7 +21,7 @@ class TableBase(object):
                 raise InputError(f"Missing '{k}'")
 
     @property
-    def is_sql_query_supported():
+    def is_sql_query_supported(sql):
         return False
 
     def sql_query(self, sql, params):

@@ -205,7 +205,7 @@ class PostgresTable(TableBase):
         self._with_cursor(alter)
 
     @property
-    def is_sql_query_supported():
+    def is_sql_query_supported(self):
         return True
 
     def sql_query(self, sql, params):
