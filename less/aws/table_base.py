@@ -19,3 +19,10 @@ class TableBase(object):
         for k in self.table_configuration.primary_key:
             if k not in key:
                 raise InputError(f"Missing '{k}'")
+
+    @property
+    def is_sql_query_supported():
+        return False
+
+    def sql_query(self, sql, params):
+        raise NotImplementedError()

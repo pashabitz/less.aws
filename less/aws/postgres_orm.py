@@ -203,3 +203,13 @@ class PostgresTable(TableBase):
         def alter(cur):
             cur.execute(f"ALTER TABLE {self._table_name} RENAME TO {new_name};")
         self._with_cursor(alter)
+
+    @property
+    def is_sql_query_supported():
+        return True
+
+    def sql_query(self, ql, params):
+        def execute_query(cur):
+            cur.execute(sql, params)
+            return [dict(r) for r in cur.fetchall()]
+        return self._with_cursor(execute_query)
