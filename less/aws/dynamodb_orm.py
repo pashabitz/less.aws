@@ -150,7 +150,7 @@ class Table(TableBase):
         for rec in values_batch:
             item = rec
             if before_put:
-                item = before_put(item)
+                before_put(item)
             for a in self.table_configuration.auto_generated_attributes:
                 item[a] = generate_id()
             if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in item]:
