@@ -61,33 +61,68 @@ class PostgresTable(TableBase):
         return self._with_cursor(get)
 
     def put_item(self, values, before_put=None):
-        if not values:
+        added_items = self.put_items([values], before_put)
+        return added_items[0] if len(added_items) == 1 else None
+
+    def put_items(self, values_batch, before_put=None):
+        if not values_batch:
             raise InputError("Missing values")
-        if before_put:
-            before_put(values)
+        if len(values_batch) > TableBase.MAX_BATCH:
+            raise InputError(f"Cannot add more than {TableBase.MAX_BATCH} records at once")
 
-        for a in self.table_configuration.auto_generated_attributes:
-            values[a] = generate_id()
+        for i, values in enumerate(values_batch):
+            if before_put:
+                before_put(values)
 
-        if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in values]:
-            raise InputError("Missing required fields")
-        columns_to_insert = [k for k in values if k in self.attributes_by_name]
+            for a in self.table_configuration.auto_generated_attributes:
+                values[a] = generate_id()
+
+        columns_to_insert = [k for k in values_batch[0] if k in self.attributes_by_name]
         columns_list = ", ".join(columns_to_insert)
-        params_string = ", ".join(["%s" for c in columns_to_insert])
-        sql = f"INSERT INTO {self._table_name} ({columns_list}) VALUES ({params_string})"
-        params = [values[k] for k in values if k in self.attributes_by_name]
+        params_string = "(" + ", ".join(["%s" for c in columns_to_insert]) + ")"
+
+        # separate loop because we want to populate auto-generated cols first,
+        # before ensuring same columns across records
+        for i, values in enumerate(values_batch):
+            if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in values]:
+                raise InputError("Missing required fields")
+            for f in values:
+                if f not in columns_to_insert:
+                    raise InputError(f"Record {i} is missing '{f}'' which is present in record 0; all records "
+                                     "must have same columns when batching")
+        params = []
+        multiple_record_params_string = []
+        for values in values_batch:
+            params += [values[k] for k in values if k in self.attributes_by_name]
+            multiple_record_params_string.append(params_string)
+        multiple_record_params_string = ", ".join(multiple_record_params_string)
+        sql = f"INSERT INTO {self._table_name} ({columns_list}) VALUES {multiple_record_params_string}"
 
         def insert(cur):
             cur.execute(sql, params)
         self._with_cursor(insert)
-        return values
+        return values_batch
 
     def delete_item(self, key):
-        self._validate_primary_key(key)
-        sql = f"DELETE FROM {self._table_name} WHERE {self._pk_list};"
+        deleted = self.delete_items([key])
+        return deleted[0] if deleted else None
+
+    def delete_items(self, keys_batch):
+        if not keys_batch:
+            raise InputError("Missing keys_batch")
+        if len(keys_batch) > TableBase.MAX_BATCH:
+            raise InputError(f"Cannot delete more than {TableBase.MAX_BATCH} records at once")
+
+        params = []
+        for key in keys_batch:
+            self._validate_primary_key(key)
+            params += self._pk_values(key)
+
+        multiple_key_sql = " OR ".join([f"({self._pk_list})" for key in keys_batch])
+        sql = f"DELETE FROM {self._table_name} WHERE {multiple_key_sql};"
 
         def delete(cur):
-            cur.execute(sql, self._pk_values(key))
+            cur.execute(sql, params)
         return self._with_cursor(delete)
 
     def update_item(self, key, values):

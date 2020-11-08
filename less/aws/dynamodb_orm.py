@@ -11,6 +11,8 @@ class Table(TableBase):
         }
         self.client = boto3.client('dynamodb')
 
+    MAX_DYNAMODB_BATCH = 25
+
     def translate_from_dynamodb_item(self, item, attributes_by_name=None):
         translated = {}
         if attributes_by_name is None:
@@ -71,11 +73,28 @@ class Table(TableBase):
         return self.translate_from_dynamodb_item(item) if item else None
 
     def delete_item(self, key):
-        self._validate_primary_key(key)
-        return self.client.delete_item(
-            TableName=self.table_configuration.table_name,
-            Key=self._key_from_params(key)
-        )
+        return self.delete_items([key])
+
+    def delete_items(self, keys_batch):
+        if len(keys_batch) > TableBase.MAX_BATCH:
+            raise InputError(f"Cannot delete more than {TableBase.MAX_BATCH} records at once")
+
+        for key in keys_batch:
+            self._validate_primary_key(key)
+        for i in range(0, len(keys_batch), Table.MAX_DYNAMODB_BATCH):
+            chunk = keys_batch[i:i+Table.MAX_DYNAMODB_BATCH]
+            self.client.batch_write_item(
+                RequestItems={
+                    self.table_configuration.table_name: [
+                        {
+                            "DeleteRequest": {
+                                "Key": self._key_from_params(key)
+                            }
+                        } for key in chunk
+                    ]
+                }
+            )
+        return keys_batch
 
     def query(self, key, index=None):
         if not self.table_configuration.is_primary_key(key) and \
@@ -105,7 +124,7 @@ class Table(TableBase):
     def scan(self):
         response = self.client.scan(
             TableName=self.table_configuration.table_name,
-            Limit=1000
+            Limit=TableBase.MAX_BATCH
         )
         return [self.translate_from_dynamodb_item(i) for i in response.get("Items", [])]
 
@@ -119,22 +138,38 @@ class Table(TableBase):
         }.get(type, "S")
 
     def put_item(self, values, before_put=None):
-        if not values:
+        values = self.put_items([values], before_put)
+        return values[0] if len(values) == 1 else None
+
+    def put_items(self, values_batch, before_put=None):
+        if not values_batch:
             raise InputError("Missing values")
-        if before_put:
-            before_put(values)
-
-        for a in self.table_configuration.auto_generated_attributes:
-            values[a] = generate_id()
-
-        if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in values]:
-            raise InputError("Missing required fields")
-        item = self.translate_to_dynamodb_item(values)
-        self.client.put_item(
-            TableName=self.table_configuration.table_name,
-            Item=item
-        )
-        return values
+        if len(values_batch) > TableBase.MAX_BATCH:
+            raise InputError(f"Cannot put more than {TableBase.MAX_BATCH} records at once")
+        preprocessed_batch = []
+        for rec in values_batch:
+            item = rec
+            if before_put:
+                item = before_put(item)
+            for a in self.table_configuration.auto_generated_attributes:
+                item[a] = generate_id()
+            if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in item]:
+                raise InputError("Missing required fields")
+            preprocessed_batch.append(item)
+        for i in range(0, len(preprocessed_batch), Table.MAX_DYNAMODB_BATCH):
+            chunk = preprocessed_batch[i:i+Table.MAX_DYNAMODB_BATCH]
+            self.client.batch_write_item(
+                RequestItems={
+                    self.table_configuration.table_name: [
+                        {
+                            "PutRequest": {
+                                "Item": self.translate_to_dynamodb_item(item)
+                            }
+                        } for item in chunk
+                    ]
+                }
+            )
+        return preprocessed_batch
 
     def update_item(self, key, values):
         self._validate_primary_key(key)

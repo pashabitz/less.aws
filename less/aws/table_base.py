@@ -13,6 +13,8 @@ class InputError(Exception):
 
 
 class TableBase(object):
+    MAX_BATCH = 1000
+
     def _validate_primary_key(self, key):
         if not key:
             raise InputError("Missing key")
