@@ -87,7 +87,7 @@ class PostgresTable(TableBase):
             if [f["name"] for f in self.table_configuration.required_attributes if f["name"] not in values]:
                 raise InputError("Missing required fields")
             for f in values:
-                if f not in columns_to_insert:
+                if f in self.attributes_by_name and f not in columns_to_insert:
                     raise InputError(f"Record {i} is missing '{f}'' which is present in record 0; all records "
                                      "must have same columns when batching")
         params = []
