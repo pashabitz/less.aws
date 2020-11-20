@@ -121,7 +121,9 @@ class Table(TableBase):
         response = self.client.query(**kwargs)
         return [self.translate_from_dynamodb_item(i) for i in response.get("Items", [])]
 
-    def scan(self):
+    def scan(self, offset=None):
+        if offset:
+            raise InputError("offset is not supported")
         response = self.client.scan(
             TableName=self.table_configuration.table_name,
             Limit=TableBase.MAX_BATCH

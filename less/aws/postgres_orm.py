@@ -154,8 +154,10 @@ class PostgresTable(TableBase):
             return [dict(r) for r in cur.fetchall()]
         return self._with_cursor(get)
 
-    def scan(self):
-        sql = f"SELECT {self._attributes_list} FROM {self._table_name} LIMIT 1000"
+    def scan(self, offset=None):
+        if offset is None:
+            offset = 0
+        sql = f"SELECT {self._attributes_list} FROM {self._table_name} LIMIT 1000 OFFSET {offset}"
 
         def get(cur):
             cur.execute(sql)
@@ -248,3 +250,7 @@ class PostgresTable(TableBase):
             cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
         return self._with_cursor(execute_query)
+
+    @property
+    def is_paging_supported(self):
+        return True

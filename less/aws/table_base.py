@@ -23,8 +23,12 @@ class TableBase(object):
                 raise InputError(f"Missing '{k}'")
 
     @property
-    def is_sql_query_supported(sql):
+    def is_sql_query_supported(self):
         return False
 
     def sql_query(self, sql, params):
         raise NotImplementedError()
+
+    @property
+    def is_paging_supported(self):
+        return False
