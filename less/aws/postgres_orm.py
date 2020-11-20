@@ -211,7 +211,8 @@ class PostgresTable(TableBase):
                 if not columns:
                     raise InputError(f"No columns for index {ind}")
                 index_columns = ", ".join(columns)
-                statements.append(f"CREATE INDEX {ind} ON {self._table_name} ({index_columns});")
+                statements.append(f"CREATE INDEX {self.table_configuration.table_name}_{ind} "
+                                  f"ON {self._table_name} ({index_columns});")
         return statements
 
     @property
