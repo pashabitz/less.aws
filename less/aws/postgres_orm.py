@@ -242,7 +242,7 @@ class PostgresTable(TableBase):
         self._with_cursor(modify_table)
 
     def _get_table_constraints(self):
-        sql = """SELECT column_name, constraint_name FROM information_schema.constraint_column_usage
+        sql = """SELECT column_name, constraint_name FROM information_schema.key_column_usage
 WHERE table_catalog = %s AND table_schema = %s AND table_name = %s"""
         params = [self.connection_info["db"], self._schema_name, self.table_configuration.table_name]
 
