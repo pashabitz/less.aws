@@ -32,8 +32,12 @@ class PostgresTable(TableBase):
         return [key[k] for k in self.table_configuration.primary_key]
 
     @property
+    def _schema_name(self):
+        return self.table_configuration.table_schema if self.table_configuration.table_schema else "user_schema"
+
+    @property
     def _table_name(self):
-        schema = self.table_configuration.table_schema if self.table_configuration.table_schema else "user_schema"
+        schema = self._schema_name
         return f"{schema}.{self.table_configuration.table_name}"
 
     def _convert_attribute(self, name, val):
@@ -237,9 +241,33 @@ class PostgresTable(TableBase):
                 cur.execute(sql)
         self._with_cursor(modify_table)
 
+    def _get_table_constraints(self):
+        sql = """SELECT column_name, constraint_name FROM information_schema.constraint_column_usage
+WHERE table_catalog = %s AND table_schema = %s AND table_name = %s"""
+        params = [self.connection_info["db"], self._schema_name, self.table_configuration.table_name]
+
+        def execute_query(cur):
+            cur.execute(sql, params)
+            return [dict(r) for r in cur.fetchall()]
+        constraint_columns = self._with_cursor(execute_query)
+        constraints = {}
+        for c in constraint_columns:
+            name = c["constraint_name"]
+            if name not in constraints:
+                constraints[name] = []
+            constraints[name].append(c)
+        return constraints
+
     def rename_table(self, new_name):
+        table_constraints = self._get_table_constraints()
+
         def alter(cur):
             cur.execute(f"ALTER TABLE {self._table_name} RENAME TO {new_name};")
+            for constraint, columns in table_constraints.items():
+                name = "__".join([self._table_name, "_".join(columns)])
+                sql = f"ALTER INDEX {self._schema_name}.{constraint} RENAME TO {self._schema_name}.{name}"
+                print(sql)
+                cur.execute(sql)
         self._with_cursor(alter)
 
     @property
