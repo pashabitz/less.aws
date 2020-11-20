@@ -265,7 +265,7 @@ WHERE table_catalog = %s AND table_schema = %s AND table_name = %s"""
             cur.execute(f"ALTER TABLE {self._table_name} RENAME TO {new_name};")
             for constraint, columns in table_constraints.items():
                 name = "__".join([self._table_name, "_".join([c["column_name"] for c in columns])])
-                sql = f"ALTER INDEX {self._schema_name}.{constraint} RENAME TO {self._schema_name}.{name}"
+                sql = f"ALTER INDEX {self._schema_name}.{constraint} RENAME TO {name}"
                 print(sql)
                 cur.execute(sql)
         self._with_cursor(alter)
