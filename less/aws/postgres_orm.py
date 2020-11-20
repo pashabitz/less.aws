@@ -241,33 +241,20 @@ class PostgresTable(TableBase):
                 cur.execute(sql)
         self._with_cursor(modify_table)
 
-    def _get_table_constraints(self):
-        sql = """SELECT column_name, constraint_name FROM information_schema.key_column_usage
-WHERE table_catalog = %s AND table_schema = %s AND table_name = %s"""
-        params = [self.connection_info["db"], self._schema_name, self.table_configuration.table_name]
-
-        def execute_query(cur):
-            cur.execute(sql, params)
-            return [dict(r) for r in cur.fetchall()]
-        constraint_columns = self._with_cursor(execute_query)
-        constraints = {}
-        for c in constraint_columns:
-            name = c["constraint_name"]
-            if name not in constraints:
-                constraints[name] = []
-            constraints[name].append(c)
-        return constraints
-
     def rename_table(self, new_name):
-        table_constraints = self._get_table_constraints()
-
         def alter(cur):
             cur.execute(f"ALTER TABLE {self._table_name} RENAME TO {new_name};")
-            for constraint, columns in table_constraints.items():
-                name = "__".join([new_name, "_".join([c["column_name"] for c in columns])])
-                sql = f"ALTER INDEX {self._schema_name}.{constraint} RENAME TO {name}"
-                print(sql)
-                cur.execute(sql)
+            if self.table_configuration.indexes:
+                for ind in self.table_configuration.indexes:
+                    sql = f"""ALTER INDEX IF EXISTS {self._table_name}__{ind}
+RENAME TO {new_name}__{ind}"""
+                    print(sql)
+                    cur.execute(sql)
+                    # old style
+                    sql = f"""ALTER INDEX IF EXISTS {self._table_name}_{ind}
+RENAME TO {new_name}__{ind}"""
+                    print(sql)
+                    cur.execute(sql)
         self._with_cursor(alter)
 
     @property
