@@ -158,7 +158,6 @@ class PostgresTable(TableBase):
         if offset is None:
             offset = 0
         sql = f"SELECT {self._attributes_list} FROM {self._table_name} LIMIT 1000 OFFSET {offset}"
-        print(sql)
 
         def get(cur):
             cur.execute(sql)
