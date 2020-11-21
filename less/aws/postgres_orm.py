@@ -248,12 +248,10 @@ class PostgresTable(TableBase):
                 for ind in self.table_configuration.indexes:
                     sql = f"""ALTER INDEX IF EXISTS {self._table_name}__{ind}
 RENAME TO {new_name}__{ind}"""
-                    print(sql)
                     cur.execute(sql)
                     # old style
                     sql = f"""ALTER INDEX IF EXISTS {self._table_name}_{ind}
 RENAME TO {new_name}__{ind}"""
-                    print(sql)
                     cur.execute(sql)
         self._with_cursor(alter)
 
