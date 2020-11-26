@@ -32,3 +32,7 @@ class TableBase(object):
     @property
     def is_paging_supported(self):
         return False
+
+    @property
+    def max_batch_size(self):
+        return TableBase.MAX_BATCH
