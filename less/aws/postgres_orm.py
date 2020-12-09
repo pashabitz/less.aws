@@ -26,7 +26,7 @@ class PostgresTable(TableBase):
 
     @property
     def _pk_list(self):
-        return ", ".join(f"{k} = %s" for k in self.table_configuration.primary_key)
+        return " AND ".join(f"{k} = %s" for k in self.table_configuration.primary_key)
 
     def _pk_values(self, key):
         return [key[k] for k in self.table_configuration.primary_key]
@@ -54,15 +54,24 @@ class PostgresTable(TableBase):
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 return func(cur)
 
-    def get_item(self, key):
-        self._validate_primary_key(key)
-        sql = f"SELECT {self._attributes_list} FROM {self._table_name} WHERE {self._pk_list};"
+    def get_items(self, keys):
+        for key in keys:
+            self._validate_primary_key(key)
+        where_clause = " OR ".join([self._pk_list for k in keys])
+        sql = f"SELECT {self._attributes_list} FROM {self._table_name} WHERE {where_clause};"
+        pk_values = []
+        for k in keys:
+            pk_values += self._pk_values(k)
 
         def get(cur):
-            cur.execute(sql, self._pk_values(key))
-            record = cur.fetchone()
-            return dict(record) if record is not None else None
+            cur.execute(sql, pk_values)
+            records = cur.fetchall()
+            return [dict(record) for record in records]
         return self._with_cursor(get)
+
+    def get_item(self, key):
+        records = self.get_items([key])
+        return records[0] if records else None
 
     def put_item(self, values, before_put=None):
         added_items = self.put_items([values], before_put)

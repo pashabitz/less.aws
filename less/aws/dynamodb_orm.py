@@ -63,14 +63,27 @@ class Table(TableBase):
     def _key_from_params(self, params):
         return {k: {"S": params[k]} for k in self.table_configuration.primary_key}
 
-    def get_item(self, key):
-        self._validate_primary_key(key)
-        response = self.client.get_item(
-            TableName=self.table_configuration.table_name,
-            Key=self._key_from_params(key)
+    def get_items(self, keys):
+        for key in keys:
+            self._validate_primary_key(key)
+        response = self.client.batch_get_item(
+            RequestItems={
+                self.table_configuration.table_name: {
+                    "Keys": [self._key_from_params(k) for k in keys]
+                }
+            }
         )
-        item = response.get("Item", None)
-        return self.translate_from_dynamodb_item(item) if item else None
+        if "Responses" not in response:
+            return []
+        items = response["Responses"]
+        if self.table_configuration.table_name not in items:
+            return []
+        items = items[self.table_configuration.table_name]
+        return [self.translate_from_dynamodb_item(item) for item in items]
+
+    def get_item(self, key):
+        items = self.get_items([key])
+        return items[0] if items else None
 
     def delete_item(self, key):
         return self.delete_items([key])
