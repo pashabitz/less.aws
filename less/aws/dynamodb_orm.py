@@ -109,7 +109,47 @@ class Table(TableBase):
             )
         return keys_batch
 
+    def _query_multiple(self, keys, index=None):
+        key_attribute = list(keys[0])[0]
+        for key in keys:
+            if not self.table_configuration.is_primary_key(key) and \
+                    index and self.table_configuration.get_index_name(key) != index:
+                raise InputError("Passed in key is not primary key and does not match requested index")
+            if len(key) > 1:
+                raise InputError("Only single attribute keys are supported for multiple value queries")
+            if list(key)[0] != key_attribute:
+                raise InputError("Invalid key: all values must be for same attribute")
+
+        # We know that each key in keys has only one attribute
+
+        key_condition_vals = ", ".join([f":{key_attribute}_{i}" for i, k in enumerate(keys)])
+        key_condition = f"#{key_attribute} IN ({key_condition_vals})"
+        expression_values = {
+            f":{key_attribute}_{i}": {
+                Table.dynamodb_type(self.attributes_by_name[key_attribute].get("type", "string")): k[key_attribute]
+            } for i, k in enumerate(keys)
+        }
+        expression_names = {
+            f"#{key_attribute}": key_attribute
+        }
+        kwargs = {
+            "TableName": self.table_configuration.table_name,
+            "FilterExpression": key_condition,
+            "ExpressionAttributeValues": expression_values,
+            "ExpressionAttributeNames": expression_names,
+        }
+        response = self.client.scan(**kwargs)
+        return [self.translate_from_dynamodb_item(i) for i in response.get("Items", [])]
+
     def query(self, key, index=None):
+        if isinstance(key, list):
+            if len(key) > 1:
+                return self._query_multiple(key, index)
+            elif len(key) == 1:
+                key = key[0]
+            else:
+                raise InputError("Empty key")
+
         if not self.table_configuration.is_primary_key(key) and \
            index and self.table_configuration.get_index_name(key) != index:
             raise InputError("Passed in key is not primary key and does not match requested index")

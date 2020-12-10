@@ -153,8 +153,14 @@ class PostgresTable(TableBase):
         return values
 
     def query(self, key, index=None):
-        where = " AND ".join([f"{k} = %s" for k in key if k in self.attributes_by_name])
-        params = [key[k] for k in key if k in self.attributes_by_name]
+        keys = key if isinstance(key, list) else [key]
+        where_parts = []
+        for curr_key in keys:
+            where_parts.append(" AND ".join([f"{k} = %s" for k in curr_key if k in self.attributes_by_name]))
+        where = " OR ".join(where_parts)
+        params = []
+        for curr_key in keys:
+            params += [curr_key[k] for k in curr_key if k in self.attributes_by_name]
         if where:
             where = f"WHERE {where}"
         else:
