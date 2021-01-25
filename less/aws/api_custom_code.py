@@ -23,13 +23,13 @@ class BaseCustomCode:
     def after_update(table_config, orm, key, update_values):
         return True
 
-    def custom_get(path, table_configs, orm, params):
+    def custom_get(path, table_configs, orm, params, access_token=None):
         return False
 
-    def custom_post(path, table_configs, orm, params, values):
+    def custom_post(path, table_configs, orm, params, values, access_token=None):
         return False
 
-    def custom_delete(path, table_configs, orm, params):
+    def custom_delete(path, table_configs, orm, params, access_token=None):
         return False
 
 
@@ -42,9 +42,21 @@ except ModuleNotFoundError:
 
 class CustomCodeReplaceableWithFile(BaseCustomCode):
     def call_override_if_exists(method_name, pass_through_params):
+        NEW_PARAMS = ["access_token"]
+        NEW_PARAMS_BY_METHOD = {
+            "custom_get": NEW_PARAMS,
+            "custom_post": NEW_PARAMS,
+            "custom_delete": NEW_PARAMS,
+        }
         if custom_code_file and hasattr(custom_code_file, method_name):
-            method_override = getattr(custom_code_file, method_name)
-            return method_override(**pass_through_params)
+            try:
+                method_override = getattr(custom_code_file, method_name)
+                return method_override(**pass_through_params)
+            except TypeError:
+                if method_name in NEW_PARAMS_BY_METHOD:
+                    for new_param in NEW_PARAMS_BY_METHOD[method_name]:
+                        pass_through_params.pop(new_param, None)
+                    return method_override(**pass_through_params)
         else:
             base_method = getattr(BaseCustomCode, method_name)
             return base_method(**pass_through_params)
@@ -73,11 +85,11 @@ class CustomCodeReplaceableWithFile(BaseCustomCode):
     def after_update(table_config, orm, key, update_values):
         return CustomCodeReplaceableWithFile.call_override_if_exists("after_update", locals())
 
-    def custom_get(path, table_configs, orm, params):
+    def custom_get(path, table_configs, orm, params, access_token=None):
         return CustomCodeReplaceableWithFile.call_override_if_exists("custom_get", locals())
 
-    def custom_post(path, table_configs, orm, params, values):
+    def custom_post(path, table_configs, orm, params, values, access_token=None):
         return CustomCodeReplaceableWithFile.call_override_if_exists("custom_post", locals())
 
-    def custom_delete(path, table_configs, orm, params):
+    def custom_delete(path, table_configs, orm, params, access_token=None):
         return CustomCodeReplaceableWithFile.call_override_if_exists("custom_delete", locals())
